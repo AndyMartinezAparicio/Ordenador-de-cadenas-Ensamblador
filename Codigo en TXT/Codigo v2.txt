@@ -1,0 +1,151 @@
+program project1;
+{$AsmMode Intel}
+{$APPTYPE CONSOLE}
+
+var
+  frase: String;
+  longitud: Integer;
+  cadena: array[0..70] of AnsiChar;
+
+
+procedure llevar_a_minusculas; assembler;
+asm
+
+   MOV  eax, 0
+   MOV  edx, 0                 //inicializamos registros para evitar bugs
+   MOV  ecx, longitud          //ecx sera el contador para el loop
+   MOV  ebx, ecx               //ebx iterador para el array
+
+ @convertir_en_minuscula:
+   DEC  ebx                              //restamos 1 a ebx
+   MOVZX eax, byte ptr cadena[ebx]      // accedemos al array desde el final
+
+   CMP  eax, 65
+   JL   @no_es_mayuscula
+
+   CMP  eax, 90                         //comparaciones para ver si es
+   JG   @no_es_mayuscula                   //mayuscula
+
+   ADD  eax, 32
+   MOV  byte ptr cadena[ebx], al       //en caso de ser mayuscula se lleva a min
+
+ @no_es_mayuscula:
+   LOOP @convertir_en_minuscula       // itera todo el array
+
+end;
+
+procedure validar_letras; assembler;
+asm
+   MOV  eax, 0                   //inicializamos registros para evitar bugs
+   MOV  ebx, 0                   //ecx sera el contador para el loop
+   MOV  ecx, longitud
+ @evaluar_caracteres:
+
+   MOVZX eax, byte ptr cadena[ecx-1]
+   CMP  eax, 97                      //analizamos todo el array para ver
+   JL   @no_es_letra                    //que sea todo letras minusculas
+   CMP  eax, 122
+   JG   @no_es_letra
+   PUSH eax                     //se pushea a la pila solo si es letra
+   INC  ebx                      //incrementamos ebx que sera la nueva longitud
+                                //de la cadena
+ @no_es_letra:
+   LOOP @evaluar_caracteres
+
+   MOV  longitud, ebx            //actualizamos longitud
+   MOV  byte ptr cadena[ebx], 0   //ponemos 0 en la ultima posiciond del array
+   DEC  ebx                      //restamos 1 a ebx (ebx sera iterador de nuevo)
+
+ @rehacer_cadena:
+   POP  eax                        //sacamos de la pila las letras validadas
+   MOV  byte ptr cadena[ebx], al
+   DEC  ebx
+   CMP  ebx, 0                     // se compara con 0 ebx para saber
+   JGE  @rehacer_cadena             //cuando terminamos
+
+
+end;
+
+procedure ordenar_cadena; assembler;
+asm
+   MOV  eax, 0
+   MOV  ebx, 0
+   MOV  ecx, longitud       //inicializamos en 0 x si da bug
+
+   DEC  ecx                 //restamos 1 a ecx que sera contador
+
+ @ciclo_1:
+   PUSH ecx                //guardamos ecx para restaurarlo luego
+   MOV  ecx, longitud       //restablecemos ecx con la longitud original
+   DEC  ecx
+
+ @ciclo_2:
+   MOVZX eax, byte ptr cadena[ecx]      // tomamos 2 valores de la cadena
+   MOVZX ebx, byte ptr cadena[ecx-1]    //ultimo y penultimo
+
+   CMP  bl, al                           //si estan ordenados salta
+   JGE  @iterar
+   MOV  byte ptr cadena[ecx],bl           //sino c intercambian
+   MOV  byte ptr cadena[ecx - 1], al
+
+ @iterar:
+   LOOP @ciclo_2
+   POP  ecx
+   LOOP @ciclo_1
+
+
+
+end;
+
+
+procedure quitar_dobles; assembler;
+asm
+   MOV  eax, 0
+   MOV  ebx, 0         //inicializamos para evitar bugs
+   MOV  edx, 0
+   MOV  ecx, longitud
+
+ @inicio:
+   MOVZX eax, byte ptr cadena[ecx-1]     //tomamos ultimo valor
+   CMP  eax, ebx              //comparamos primero con 0, luego con el anterior
+   JE   @son_iguales           //si son iguales no hace nada
+   MOV  ebx, eax              //si son distintos lo agrega a la pila
+   PUSH eax
+   INC  edx                  //aumentamos edx que sera la nueva longitud
+ @son_iguales:
+   LOOP @inicio
+
+   MOV  byte ptr cadena[edx], 0
+   MOV  eax, 0                  //cremos nueva cadena poniendo 0 al final
+   DEC  edx
+
+ @rehacer_cadena:
+   POP  eax
+   MOV  byte ptr cadena[edx], al
+   DEC  edx                      //vamos sacando de la pila y colocando la cadena
+   CMP  edx, 0
+   JGE  @rehacer_cadena
+
+
+
+end;
+
+begin
+
+  Write('Ingrese una frase: ');     //pedimos una frase
+  ReadLn(frase);                    //la escaneamos
+
+  longitud := Length(frase);       //  obtenemos la longitud de la frase
+  cadena := frase;                 //  la convertimos a un array de char
+
+  llevar_a_minusculas;       //
+  validar_letras;            //  funciones de asm donde llevamos a minusculas
+  ordenar_cadena;            //   validamos que sean letras y no c repitan
+  quitar_dobles;             //      y se ordena
+
+  Writeln(cadena);          // mostramos en pantalla
+
+  ReadLn(frase);       //scan para que no se desaparezca la consola
+
+
+end.       

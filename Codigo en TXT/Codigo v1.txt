@@ -1,0 +1,152 @@
+program project1;
+{$AsmMode Intel}
+{$APPTYPE CONSOLE}
+
+var
+  palabra: String;
+  longitud: Integer;
+  arreglo: array[0..100] of AnsiChar;
+
+
+procedure minusculas; assembler;
+asm
+
+   mov eax, 0
+   mov edx, 0
+   mov ecx, longitud
+   mov ebx, ecx
+
+   @convertir_en_minuscula:
+   dec ebx
+   movzx eax, byte ptr arreglo[ebx]
+   cmp eax, 65
+   jl @noEsMayuscula
+   cmp eax, 90
+   jg @noEsMayuscula
+   add eax, 32
+   mov byte ptr arreglo[ebx], al
+
+   @noEsMayuscula:
+   loop @convertir_en_minuscula
+
+
+
+end;
+
+procedure validarLetras; assembler;
+asm
+   mov eax, 0
+   mov ebx, 0
+   MOV ECX, longitud
+   @evaluarCaracteres:
+
+   movzx eax, byte ptr arreglo[ecx-1]
+   cmp eax, 97
+   jl @noEsLetra
+   cmp eax, 122
+   jg @noEsLetra
+   push eax
+   inc ebx
+
+   @noEsLetra:
+    loop @evaluarCaracteres
+
+    mov longitud, ebx
+    mov byte ptr arreglo[ebx], 0
+    mov eax, 0
+    dec ebx
+
+   @rehacerCadena:
+    pop eax
+    mov byte ptr arreglo[ebx], al
+    dec ebx
+    cmp ebx, 0
+    jge @rehacerCadena
+
+
+end;
+
+procedure ordenarCadena; assembler;
+asm
+   mov eax, 0
+   mov ebx, 0
+   mov ecx, 0
+   mov edx, 0
+
+   mov ecx, longitud
+   dec ecx
+   @primerCiclo:
+   push ecx
+   mov ecx, longitud
+   dec ecx
+   @segundoLoop:
+   movzx eax, byte ptr arreglo[ecx]
+   movzx ebx, byte ptr arreglo[ecx-1]
+   cmp bl, al
+   jge @next
+   mov byte ptr arreglo[ecx],bl
+   mov byte ptr arreglo[ecx - 1], al
+   @next:
+   loop @segundoLoop
+   pop ecx
+   loop @primerCiclo
+
+
+
+end;
+
+
+procedure quitarDuplicados; assembler;
+asm
+   mov eax, 0
+   mov ebx, 0
+   mov ecx, 0
+   mov edx, 0
+
+   mov ecx, longitud
+
+   @inicio:
+   movzx eax, byte ptr arreglo[ecx-1]
+   cmp eax, ebx
+   je @sonIguales
+   mov ebx, eax
+   push eax
+   inc edx
+   @sonIguales:
+   loop @inicio
+
+    mov byte ptr arreglo[edx], 0
+    mov eax, 0
+    dec edx
+
+   @rehacerCadena:
+    pop eax
+    mov byte ptr arreglo[edx], al
+    dec edx
+    cmp edx, 0
+    jge @rehacerCadena
+
+
+
+end;
+
+begin
+  Write('Ingrese una palabra: ');
+  ReadLn(palabra);
+
+  longitud := Length(palabra);
+  arreglo := palabra;
+
+  minusculas;
+  Writeln(arreglo);
+  validarLetras;
+  Writeln(arreglo);
+  ordenarCadena;
+  Writeln(arreglo);
+  quitarDuplicados;
+
+  Writeln(arreglo);
+  ReadLn(palabra);
+
+
+end.
