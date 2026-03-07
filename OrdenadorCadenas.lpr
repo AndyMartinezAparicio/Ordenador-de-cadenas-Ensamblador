@@ -1,4 +1,4 @@
-program project1;
+program OrdenadorCadenas;
 {$AsmMode Intel}
 {$APPTYPE CONSOLE}
 
